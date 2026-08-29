@@ -1,0 +1,30 @@
+services:
+
+  frontend:
+
+    build:
+      context: .
+
+    container_name: ecommerce-frontend
+
+    ports:
+      - "8080:80"
+
+    restart: unless-stopped
+
+    networks:
+      - frontend_default
+      - user-service_default
+      - product-service_default
+
+
+networks:
+
+  frontend_default:
+    external: true
+
+  user-service_default:
+    external: true
+
+  product-service_default:
+    external: true
