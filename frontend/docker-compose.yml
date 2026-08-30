@@ -16,6 +16,7 @@ services:
       - frontend_default
       - user-service_default
       - product-service_default
+      - order-service_default
 
 
 networks:
@@ -27,4 +28,7 @@ networks:
     external: true
 
   product-service_default:
+    external: true
+
+  order-service_default:
     external: true

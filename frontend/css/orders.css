@@ -1,0 +1,246 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background: #f5f7fb;
+    color: #1f2937;
+}
+
+
+/* ==========================================
+   MAIN CONTAINER
+========================================== */
+
+body {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+
+/* ==========================================
+   PAGE TITLE
+========================================== */
+
+h1 {
+    text-align: center;
+
+    margin-bottom: 40px;
+
+    font-size: 36px;
+
+    color: #111827;
+}
+
+
+/* ==========================================
+   SECTION HEADINGS
+========================================== */
+
+h2 {
+    margin-top: 30px;
+    margin-bottom: 15px;
+
+    font-size: 24px;
+
+    color: #374151;
+}
+
+
+/* ==========================================
+   STATUS MESSAGES
+========================================== */
+
+#pendingMessage,
+#completedMessage {
+    color: #6b7280;
+
+    margin-bottom: 15px;
+}
+
+
+/* ==========================================
+   ORDER CARD
+========================================== */
+
+#pendingOrders > div,
+#completedOrders > div {
+
+    background: white;
+
+    border: none !important;
+
+    border-radius: 14px;
+
+    padding: 22px;
+
+    margin: 15px 0 !important;
+
+    box-shadow:
+        0 4px 15px rgba(
+            0,
+            0,
+            0,
+            0.08
+        );
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+
+}
+
+
+/* ==========================================
+   PENDING CARD
+========================================== */
+
+#pendingOrders > div {
+
+    border-left:
+        5px solid #f59e0b !important;
+
+}
+
+
+/* ==========================================
+   COMPLETED CARD
+========================================== */
+
+#completedOrders > div {
+
+    border-left:
+        5px solid #10b981 !important;
+
+}
+
+
+/* ==========================================
+   CARD HOVER
+========================================== */
+
+#pendingOrders > div:hover {
+
+    transform:
+        translateY(-3px);
+
+    box-shadow:
+        0 8px 22px rgba(
+            0,
+            0,
+            0,
+            0.12
+        );
+
+}
+
+
+/* ==========================================
+   ORDER TITLE
+========================================== */
+
+#pendingOrders h3,
+#completedOrders h3 {
+
+    margin-top: 0;
+
+    margin-bottom: 15px;
+
+    font-size: 20px;
+
+    color: #111827;
+}
+
+
+/* ==========================================
+   ORDER INFORMATION
+========================================== */
+
+#pendingOrders p,
+#completedOrders p {
+
+    margin: 8px 0;
+
+    font-size: 16px;
+
+    line-height: 1.5;
+
+}
+
+
+/* ==========================================
+   CLICK MESSAGE
+========================================== */
+
+#pendingOrders > div p:last-child {
+
+    margin-top: 18px;
+
+    padding: 10px 14px;
+
+    background: #fff7ed;
+
+    border-radius: 8px;
+
+    color: #c2410c;
+
+    font-size: 14px;
+
+}
+
+
+/* ==========================================
+   DIVIDER
+========================================== */
+
+hr {
+
+    border: none;
+
+    border-top:
+        1px solid #e5e7eb;
+
+    margin: 35px 0;
+}
+
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media (max-width: 600px) {
+
+    body {
+        padding:
+            25px 15px;
+    }
+
+
+    h1 {
+        font-size: 28px;
+    }
+
+
+    h2 {
+        font-size: 21px;
+    }
+
+
+    #pendingOrders > div,
+    #completedOrders > div {
+
+        padding: 18px;
+
+    }
+
+}
+
