@@ -12,6 +12,12 @@ if (!token) {
     window.location.href =
         "/login.html";
 }
+const backToProducts =
+    document.getElementById("backToProducts");
+
+backToProducts.addEventListener("click", () => {
+    window.location.href = "/pages/products.html";
+});
 
 
 // ==========================================
