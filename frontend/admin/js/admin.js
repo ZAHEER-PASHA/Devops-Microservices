@@ -4,16 +4,45 @@
 
 const PRODUCT_API = "/api/products";
 
-
 // ==========================================
 // AUTHENTICATION
 // ==========================================
 
 const token = localStorage.getItem("token");
 
+let currentUser = {};
+
+try {
+    currentUser =
+        JSON.parse(
+            localStorage.getItem("user") || "{}"
+        );
+} catch (error) {
+    currentUser = {};
+}
+
+
+// ==========================================
+// AUTH CHECK
+// ==========================================
+
+// No token -> login page
 if (!token) {
-    alert("Please login first.");
-    window.location.href = "/";
+
+    window.location.href =
+        "/login.html";
+
+}
+
+// Token exists but user is not admin
+else if (currentUser.role !== "admin") {
+
+    alert(
+        "Admin access required."
+    );
+
+    window.location.href =
+        "/pages/products.html";
 }
 
 
@@ -22,40 +51,64 @@ if (!token) {
 // ==========================================
 
 const productTableBody =
-    document.getElementById("productTableBody");
+    document.getElementById(
+        "productTableBody"
+    );
 
 const productModal =
-    document.getElementById("productModal");
+    document.getElementById(
+        "productModal"
+    );
 
 const productForm =
-    document.getElementById("productForm");
+    document.getElementById(
+        "productForm"
+    );
 
 const modalTitle =
-    document.getElementById("modalTitle");
+    document.getElementById(
+        "modalTitle"
+    );
 
 const productId =
-    document.getElementById("productId");
+    document.getElementById(
+        "productId"
+    );
 
 const nameInput =
-    document.getElementById("name");
+    document.getElementById(
+        "name"
+    );
 
 const descriptionInput =
-    document.getElementById("description");
+    document.getElementById(
+        "description"
+    );
 
 const priceInput =
-    document.getElementById("price");
+    document.getElementById(
+        "price"
+    );
 
 const stockInput =
-    document.getElementById("stock");
+    document.getElementById(
+        "stock"
+    );
 
 const categoryInput =
-    document.getElementById("category");
+    document.getElementById(
+        "category"
+    );
 
 const imageUrlInput =
-    document.getElementById("imageUrl");
+    document.getElementById(
+        "imageUrl"
+    );
 
 const message =
-    document.getElementById("message");
+    document.getElementById(
+        "message"
+    );
 
 
 // ==========================================
@@ -75,28 +128,48 @@ async function loadProducts() {
         `;
 
 
-        const response = await fetch(
-            PRODUCT_API,
-            {
-                method: "GET",
+        const response =
+            await fetch(
+                PRODUCT_API,
+                {
+                    method: "GET",
 
-                headers: {
-                    "Authorization": "Bearer " + token
+                    headers: {
+                        "Authorization":
+                            "Bearer " + token
+                    }
                 }
-            }
-        );
+            );
 
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
 
-        // Session expired
-        if (
-            response.status === 401 ||
-            response.status === 403
-        ) {
+        // ==================================
+        // ONLY 401 MEANS SESSION PROBLEM
+        // ==================================
 
-            logout();
+        if (response.status === 401) {
+
+            handleSessionExpired();
+
+            return;
+        }
+
+
+        // ==================================
+        // 403 = FORBIDDEN
+        // DO NOT LOGOUT
+        // ==================================
+
+        if (response.status === 403) {
+
+            showMessage(
+                data.message ||
+                "You do not have permission to perform this action.",
+                "error"
+            );
 
             return;
         }
@@ -132,7 +205,9 @@ async function loadProducts() {
                 <td colspan="7">
                     Unable to load products.
                     <br>
-                    ${escapeHtml(error.message)}
+                    ${escapeHtml(
+                        error.message
+                    )}
                 </td>
             </tr>
         `;
@@ -144,12 +219,17 @@ async function loadProducts() {
 // DISPLAY PRODUCTS
 // ==========================================
 
-function displayProducts(products) {
+function displayProducts(
+    products
+) {
 
-    productTableBody.innerHTML = "";
+    productTableBody.innerHTML =
+        "";
 
 
-    if (products.length === 0) {
+    if (
+        products.length === 0
+    ) {
 
         productTableBody.innerHTML = `
             <tr>
@@ -163,81 +243,104 @@ function displayProducts(products) {
     }
 
 
-    products.forEach(product => {
+    products.forEach(
+        product => {
 
-        const row =
-            document.createElement("tr");
-
-
-        const image =
-            product.image_url ||
-            "https://via.placeholder.com/60?text=No+Image";
+            const row =
+                document.createElement(
+                    "tr"
+                );
 
 
-        row.innerHTML = `
-
-            <td>
-                ${product.id}
-            </td>
-
-            <td>
-
-                <img
-                    src="${escapeHtml(image)}"
-                    alt="${escapeHtml(product.name)}"
-                    class="product-image"
-                    onerror="
-                        this.src='https://via.placeholder.com/60?text=No+Image'
-                    "
-                >
-
-            </td>
-
-            <td>
-                ${escapeHtml(product.name)}
-            </td>
-
-            <td>
-                ${escapeHtml(product.category || "General")}
-            </td>
-
-            <td>
-                ₹${Number(product.price).toLocaleString(
-                    "en-IN",
-                    {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }
-                )}
-            </td>
-
-            <td>
-                ${product.stock}
-            </td>
-
-            <td>
-
-                <button
-                    class="edit-btn"
-                    onclick="editProduct(${product.id})"
-                >
-                    Edit
-                </button>
-
-                <button
-                    class="delete-btn"
-                    onclick="deleteProduct(${product.id})"
-                >
-                    Delete
-                </button>
-
-            </td>
-        `;
+            const image =
+                product.image_url ||
+                "https://via.placeholder.com/60?text=No+Image";
 
 
-        productTableBody.appendChild(row);
+            row.innerHTML = `
 
-    });
+                <td>
+                    ${product.id}
+                </td>
+
+                <td>
+                    <img
+                        src="${escapeHtml(image)}"
+                        alt="${escapeHtml(
+                            product.name
+                        )}"
+                        class="product-image"
+                        onerror="
+                            this.src='https://via.placeholder.com/60?text=No+Image'
+                        "
+                    >
+                </td>
+
+                <td>
+                    ${escapeHtml(
+                        product.name
+                    )}
+                </td>
+
+                <td>
+                    ${escapeHtml(
+                        product.category ||
+                        "General"
+                    )}
+                </td>
+
+                <td>
+                    ₹${Number(
+                        product.price
+                    ).toLocaleString(
+                        "en-IN",
+                        {
+                            minimumFractionDigits:
+                                2,
+
+                            maximumFractionDigits:
+                                2
+                        }
+                    )}
+                </td>
+
+                <td>
+                    ${product.stock}
+                </td>
+
+                <td>
+
+                    <button
+                        class="edit-btn"
+                        onclick="
+                            editProduct(
+                                ${product.id}
+                            )
+                        "
+                    >
+                        Edit
+                    </button>
+
+                    <button
+                        class="delete-btn"
+                        onclick="
+                            deleteProduct(
+                                ${product.id}
+                            )
+                        "
+                    >
+                        Delete
+                    </button>
+
+                </td>
+            `;
+
+
+            productTableBody.appendChild(
+                row
+            );
+        }
+    );
 }
 
 
@@ -246,7 +349,9 @@ function displayProducts(products) {
 // ==========================================
 
 document
-    .getElementById("addProductBtn")
+    .getElementById(
+        "addProductBtn"
+    )
     .addEventListener(
         "click",
         () => {
@@ -266,7 +371,8 @@ function openAddModal() {
     productForm.reset();
 
 
-    productId.value = "";
+    productId.value =
+        "";
 
 
     productModal.classList.remove(
@@ -279,7 +385,9 @@ function openAddModal() {
 // EDIT PRODUCT
 // ==========================================
 
-async function editProduct(id) {
+async function editProduct(
+    id
+) {
 
     try {
 
@@ -301,12 +409,27 @@ async function editProduct(id) {
             await response.json();
 
 
+        // 401 = session expired
         if (
-            response.status === 401 ||
+            response.status === 401
+        ) {
+
+            handleSessionExpired();
+
+            return;
+        }
+
+
+        // 403 = forbidden
+        if (
             response.status === 403
         ) {
 
-            logout();
+            showMessage(
+                data.message ||
+                "Admin access required.",
+                "error"
+            );
 
             return;
         }
@@ -335,20 +458,26 @@ async function editProduct(id) {
         productId.value =
             product.id;
 
+
         nameInput.value =
             product.name || "";
+
 
         descriptionInput.value =
             product.description || "";
 
+
         priceInput.value =
             product.price || "";
+
 
         stockInput.value =
             product.stock || 0;
 
+
         categoryInput.value =
             product.category || "";
+
 
         imageUrlInput.value =
             product.image_url || "";
@@ -400,18 +529,27 @@ productForm.addEventListener(
                 descriptionInput.value.trim(),
 
             price:
-                Number(priceInput.value),
+                Number(
+                    priceInput.value
+                ),
 
             stock:
-                Number(stockInput.value),
+                Number(
+                    stockInput.value
+                ),
 
             category:
                 categoryInput.value.trim(),
 
             image_url:
-                imageUrlInput.value.trim() || null
+                imageUrlInput.value.trim() ||
+                null
         };
 
+
+        // ==================================
+        // VALIDATION
+        // ==================================
 
         if (
             !productData.name ||
@@ -464,7 +602,6 @@ productForm.addEventListener(
                 await fetch(
                     url,
                     {
-
                         method: method,
 
                         headers: {
@@ -488,12 +625,34 @@ productForm.addEventListener(
                 await response.json();
 
 
+            // ==================================
+            // 401 = SESSION EXPIRED
+            // ==================================
+
             if (
-                response.status === 401 ||
+                response.status === 401
+            ) {
+
+                handleSessionExpired();
+
+                return;
+            }
+
+
+            // ==================================
+            // 403 = FORBIDDEN
+            // DO NOT LOGOUT
+            // ==================================
+
+            if (
                 response.status === 403
             ) {
 
-                logout();
+                showMessage(
+                    data.message ||
+                    "Admin access required.",
+                    "error"
+                );
 
                 return;
             }
@@ -524,7 +683,6 @@ productForm.addEventListener(
 
             await loadProducts();
 
-
         } catch (error) {
 
             console.error(
@@ -538,7 +696,6 @@ productForm.addEventListener(
                 "error"
             );
         }
-
     }
 );
 
@@ -547,7 +704,9 @@ productForm.addEventListener(
 // DELETE PRODUCT
 // ==========================================
 
-async function deleteProduct(id) {
+async function deleteProduct(
+    id
+) {
 
     const confirmed =
         confirm(
@@ -556,6 +715,7 @@ async function deleteProduct(id) {
 
 
     if (!confirmed) {
+
         return;
     }
 
@@ -566,7 +726,6 @@ async function deleteProduct(id) {
             await fetch(
                 `${PRODUCT_API}/${id}`,
                 {
-
                     method: "DELETE",
 
                     headers: {
@@ -581,12 +740,27 @@ async function deleteProduct(id) {
             await response.json();
 
 
+        // 401 = session expired
         if (
-            response.status === 401 ||
+            response.status === 401
+        ) {
+
+            handleSessionExpired();
+
+            return;
+        }
+
+
+        // 403 = forbidden
+        if (
             response.status === 403
         ) {
 
-            logout();
+            showMessage(
+                data.message ||
+                "Admin access required.",
+                "error"
+            );
 
             return;
         }
@@ -634,7 +808,9 @@ async function deleteProduct(id) {
 // ==========================================
 
 document
-    .getElementById("closeModalBtn")
+    .getElementById(
+        "closeModalBtn"
+    )
     .addEventListener(
         "click",
         closeModal
@@ -642,7 +818,9 @@ document
 
 
 document
-    .getElementById("cancelBtn")
+    .getElementById(
+        "cancelBtn"
+    )
     .addEventListener(
         "click",
         closeModal
@@ -655,9 +833,12 @@ function closeModal() {
         "hidden"
     );
 
+
     productForm.reset();
 
-    productId.value = "";
+
+    productId.value =
+        "";
 }
 
 
@@ -670,13 +851,12 @@ productModal.addEventListener(
     (event) => {
 
         if (
-            event.target === productModal
+            event.target ===
+            productModal
         ) {
 
             closeModal();
-
         }
-
     }
 );
 
@@ -686,14 +866,15 @@ productModal.addEventListener(
 // ==========================================
 
 document
-    .getElementById("backToProducts")
+    .getElementById(
+        "backToProducts"
+    )
     .addEventListener(
         "click",
         () => {
 
             window.location.href =
-                "/";
-
+                "/pages/products.html";
         }
     );
 
@@ -703,7 +884,9 @@ document
 // ==========================================
 
 document
-    .getElementById("logoutBtn")
+    .getElementById(
+        "logoutBtn"
+    )
     .addEventListener(
         "click",
         logout
@@ -711,6 +894,29 @@ document
 
 
 function logout() {
+
+    // Remove authentication data
+    localStorage.removeItem(
+        "token"
+    );
+
+    localStorage.removeItem(
+        "user"
+    );
+
+
+    // IMPORTANT:
+    // Go to LOGIN page, NOT "/"
+    window.location.href =
+        "/login.html";
+}
+
+
+// ==========================================
+// SESSION EXPIRED
+// ==========================================
+
+function handleSessionExpired() {
 
     localStorage.removeItem(
         "token"
@@ -720,7 +926,14 @@ function logout() {
         "user"
     );
 
-    window.location.href = "/";
+
+    alert(
+        "Your session has expired. Please login again."
+    );
+
+
+    window.location.href =
+        "/login.html";
 }
 
 
@@ -736,11 +949,14 @@ function showMessage(
     message.textContent =
         text;
 
+
     message.style.display =
         "block";
 
 
-    if (type === "success") {
+    if (
+        type === "success"
+    ) {
 
         message.style.background =
             "#dcfce7";
@@ -774,13 +990,19 @@ function showMessage(
 // HTML ESCAPE
 // ==========================================
 
-function escapeHtml(value) {
+function escapeHtml(
+    value
+) {
 
     const div =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     div.textContent =
         value ?? "";
+
 
     return div.innerHTML;
 }
@@ -790,4 +1012,11 @@ function escapeHtml(value) {
 // INITIAL LOAD
 // ==========================================
 
-loadProducts();
+// Only load products if user is admin
+if (
+    token &&
+    currentUser.role === "admin"
+) {
+
+    loadProducts();
+}

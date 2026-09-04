@@ -1,4 +1,6 @@
-const token = localStorage.getItem("token");
+const token =
+    localStorage.getItem("token");
+
 
 // ==========================================
 // CHECK LOGIN
@@ -6,64 +8,114 @@ const token = localStorage.getItem("token");
 
 if (!token) {
 
-
-alert("Please login first.");
-
-window.location.href = "/";
-
-
+    window.location.href =
+        "/login.html";
 }
+
 
 // ==========================================
 // API
 // ==========================================
 
-const PRODUCT_API = "/api/products";
-const ORDER_API = "/api/orders";
+const PRODUCT_API =
+    "/api/products";
+
+const ORDER_API =
+    "/api/orders";
+
 
 // ==========================================
 // ELEMENTS
 // ==========================================
 
 const productContainer =
-document.getElementById("productContainer");
+    document.getElementById(
+        "productContainer"
+    );
 
 const ordersBtn =
-document.getElementById("ordersBtn");
+    document.getElementById(
+        "ordersBtn"
+    );
 
 const logoutBtn =
-document.getElementById("logoutBtn");
+    document.getElementById(
+        "logoutBtn"
+    );
 
 const welcomeUser =
-document.getElementById("welcomeUser");
+    document.getElementById(
+        "welcomeUser"
+    );
+
 
 // ==========================================
 // MY ORDERS
 // ==========================================
 
-ordersBtn.addEventListener("click", () => {
+ordersBtn.addEventListener(
+    "click",
+    () => {
 
+        window.location.href =
+            "/pages/orders.html";
+    }
+);
 
-window.location.href =
-    "/pages/orders.html";
-
-
-});
 
 // ==========================================
 // LOGOUT
 // ==========================================
 
-logoutBtn.addEventListener("click", () => {
+logoutBtn.addEventListener(
+    "click",
+    logout
+);
 
 
-localStorage.removeItem("token");
-localStorage.removeItem("user");
+function logout() {
 
-window.location.href = "/";
+    // Remove authentication data
+    localStorage.removeItem(
+        "token"
+    );
+
+    localStorage.removeItem(
+        "user"
+    );
 
 
-});
+    // IMPORTANT:
+    // Go directly to login page
+    window.location.href =
+        "/login.html";
+}
+
+
+// ==========================================
+// SESSION EXPIRED
+// ==========================================
+
+function handleSessionExpired() {
+
+    localStorage.removeItem(
+        "token"
+    );
+
+    localStorage.removeItem(
+        "user"
+    );
+
+
+    alert(
+        "Your session has expired. Please login again."
+    );
+
+
+    window.location.href =
+        "/login.html";
+}
+
 
 // ==========================================
 // DISPLAY USER
@@ -71,42 +123,45 @@ window.location.href = "/";
 
 function displayUser() {
 
+    const userData =
+        localStorage.getItem(
+            "user"
+        );
 
-const userData =
-    localStorage.getItem("user");
 
-if (!userData) {
+    if (!userData) {
 
-    welcomeUser.textContent =
-        "Welcome";
+        welcomeUser.textContent =
+            "Welcome";
 
-    return;
+        return;
+    }
 
+
+    try {
+
+        const user =
+            JSON.parse(
+                userData
+            );
+
+
+        welcomeUser.textContent =
+            `Welcome, ${
+                user.name ||
+                user.username ||
+                user.email ||
+                "User"
+            }`;
+
+
+    } catch (error) {
+
+        welcomeUser.textContent =
+            "Welcome";
+    }
 }
 
-
-try {
-
-    const user =
-        JSON.parse(userData);
-
-    welcomeUser.textContent =
-        `Welcome, ${
-            user.name ||
-            user.username ||
-            user.email ||
-            "User"
-        }`;
-
-} catch (error) {
-
-    welcomeUser.textContent =
-        "Welcome";
-
-}
-
-
-}
 
 // ==========================================
 // LOAD PRODUCTS
@@ -114,691 +169,804 @@ try {
 
 async function loadProducts() {
 
+    try {
 
-try {
+        productContainer.innerHTML = `
+            <div class="empty-state">
 
-    productContainer.innerHTML = `
-        <div class="empty-state">
+                <h2>
+                    Loading products...
+                </h2>
 
-            <h2>
-                Loading products...
-            </h2>
-
-        </div>
-    `;
+            </div>
+        `;
 
 
-    const response =
-        await fetch(
-            PRODUCT_API,
-            {
-                method: "GET",
+        const response =
+            await fetch(
+                PRODUCT_API,
+                {
+                    method: "GET",
 
-                headers: {
-                    "Authorization":
-                        "Bearer " + token
+                    headers: {
+                        "Authorization":
+                            "Bearer " + token
+                    }
                 }
-            }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Products API response:",
+            data
         );
 
 
-    const data =
-        await response.json();
+        // ==================================
+        // 401 ONLY = SESSION EXPIRED
+        // ==================================
+
+        if (
+            response.status === 401
+        ) {
+
+            handleSessionExpired();
+
+            return;
+        }
 
 
-    console.log(
-        "Products API response:",
-        data
-    );
+        // ==================================
+        // 403 = FORBIDDEN
+        // DO NOT LOGOUT
+        // ==================================
+
+        if (
+            response.status === 403
+        ) {
+
+            productContainer.innerHTML = `
+                <div class="empty-state">
+
+                    <h2>
+                        Access Denied
+                    </h2>
+
+                    <p>
+                        You do not have permission
+                        to view these products.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
 
 
-    if (
-        response.status === 401 ||
-        response.status === 403
-    ) {
+        if (
+            !response.ok ||
+            !data.success
+        ) {
 
-        localStorage.removeItem("token");
+            throw new Error(
+                data.message ||
+                "Failed to load products"
+            );
+        }
 
-        alert(
-            "Your session has expired. Please login again."
+
+        displayProducts(
+            data.products || []
         );
 
-        window.location.href = "/";
 
-        return;
+    } catch (error) {
 
+        console.error(
+            "Load products error:",
+            error
+        );
+
+
+        productContainer.innerHTML = `
+            <div class="empty-state">
+
+                <h2>
+                    Unable to load products
+                </h2>
+
+                <p>
+                    ${escapeHtml(
+                        error.message
+                    )}
+                </p>
+
+                <button
+                    class="btn-primary"
+                    onclick="loadProducts()"
+                >
+                    Retry
+                </button>
+
+            </div>
+        `;
     }
-
-
-    if (
-        !response.ok ||
-        !data.success
-    ) {
-
-        throw new Error(
-            data.message ||
-            "Failed to load products"
-        );
-
-    }
-
-
-    displayProducts(
-        data.products || []
-    );
-
-
-} catch (error) {
-
-    console.error(
-        "Load products error:",
-        error
-    );
-
-
-    productContainer.innerHTML = `
-        <div class="empty-state">
-
-            <h2>
-                Unable to load products
-            </h2>
-
-            <p>
-                ${escapeHtml(error.message)}
-            </p>
-
-            <button
-                class="btn-primary"
-                onclick="loadProducts()">
-
-                Retry
-
-            </button>
-
-        </div>
-    `;
-
 }
 
-
-}
 
 // ==========================================
 // DISPLAY PRODUCTS
 // ==========================================
 
-function displayProducts(products) {
+function displayProducts(
+    products
+) {
+
+    productContainer.innerHTML =
+        "";
 
 
-productContainer.innerHTML = "";
+    if (
+        products.length === 0
+    ) {
 
+        productContainer.innerHTML = `
+            <div class="empty-state">
 
-if (products.length === 0) {
+                <h2>
+                    No Products Found
+                </h2>
 
-    productContainer.innerHTML = `
-        <div class="empty-state">
-
-            <h2>
-                No Products Found
-            </h2>
-
-            <p>
-                No products are currently available.
-            </p>
-
-        </div>
-    `;
-
-    return;
-
-}
-
-
-products.forEach(product => {
-
-    const card =
-        document.createElement("div");
-
-    card.className =
-        "product-card";
-
-
-    const image =
-        product.image_url ||
-        "https://via.placeholder.com/400x200?text=No+Image";
-
-
-    const price =
-        Number(product.price);
-
-
-    const stock =
-        Number(product.stock);
-
-
-    const outOfStock =
-        stock <= 0;
-
-
-    card.innerHTML = `
-
-        <img
-            src="${escapeHtml(image)}"
-            alt="${escapeHtml(product.name)}"
-            class="product-image"
-            onerror="
-                this.src='https://via.placeholder.com/400x200?text=No+Image'
-            "
-        >
-
-
-        <div class="product-content">
-
-
-            <span class="product-category">
-
-                ${escapeHtml(
-                    product.category ||
-                    "General"
-                )}
-
-            </span>
-
-
-            <h3>
-
-                ${escapeHtml(
-                    product.name
-                )}
-
-            </h3>
-
-
-            <p class="product-description">
-
-                ${escapeHtml(
-                    product.description ||
-                    "No description available"
-                )}
-
-            </p>
-
-
-            <div class="product-price">
-
-                ₹${price.toLocaleString(
-                    "en-IN",
-                    {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }
-                )}
+                <p>
+                    No products are currently available.
+                </p>
 
             </div>
+        `;
 
-
-            <div
-                class="product-stock
-                ${outOfStock ? "out-of-stock" : ""}">
-
-                ${
-                    outOfStock
-                        ? "Out of stock"
-                        : `Stock: ${stock}`
-                }
-
-            </div>
-
-
-            ${
-                outOfStock
-                    ? `
-                        <button
-                            class="btn-buy"
-                            disabled>
-
-                            Out of Stock
-
-                        </button>
-                    `
-                    : `
-                        <div class="quantity-section">
-
-                            <label>
-                                Quantity
-                            </label>
-
-
-                            <div class="quantity-control">
-
-                                <button
-                                    type="button"
-                                    class="quantity-btn decrease">
-
-                                    −
-
-                                </button>
-
-
-                                <input
-                                    type="number"
-                                    class="quantity-input"
-                                    value="1"
-                                    min="1"
-                                    max="${stock}"
-                                >
-
-
-                                <button
-                                    type="button"
-                                    class="quantity-btn increase">
-
-                                    +
-
-                                </button>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="order-total">
-
-                            <span>
-                                Total
-                            </span>
-
-                            <strong class="card-total">
-
-                                ₹${price.toLocaleString(
-                                    "en-IN",
-                                    {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2
-                                    }
-                                )}
-
-                            </strong>
-
-                        </div>
-
-
-                        <button
-                            type="button"
-                            class="btn-buy">
-
-                            Buy Now
-
-                        </button>
-                    `
-            }
-
-        </div>
-
-    `;
-
-
-    productContainer.appendChild(card);
-
-
-    if (!outOfStock) {
-
-        setupProductCard(
-            card,
-            product,
-            price,
-            stock
-        );
-
+        return;
     }
 
-});
+
+    products.forEach(
+        product => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
 
 
+            card.className =
+                "product-card";
+
+
+            const image =
+                product.image_url ||
+                "https://via.placeholder.com/400x200?text=No+Image";
+
+
+            const price =
+                Number(
+                    product.price
+                );
+
+
+            const stock =
+                Number(
+                    product.stock
+                );
+
+
+            const outOfStock =
+                stock <= 0;
+
+
+            card.innerHTML = `
+
+                <img
+                    src="${escapeHtml(image)}"
+                    alt="${escapeHtml(
+                        product.name
+                    )}"
+                    class="product-image"
+                    onerror="
+                        this.src='https://via.placeholder.com/400x200?text=No+Image'
+                    "
+                >
+
+
+                <div class="product-content">
+
+                    <span class="product-category">
+
+                        ${escapeHtml(
+                            product.category ||
+                            "General"
+                        )}
+
+                    </span>
+
+
+                    <h3>
+
+                        ${escapeHtml(
+                            product.name
+                        )}
+
+                    </h3>
+
+
+                    <p class="product-description">
+
+                        ${escapeHtml(
+                            product.description ||
+                            "No description available"
+                        )}
+
+                    </p>
+
+
+                    <div class="product-price">
+
+                        ₹${price.toLocaleString(
+                            "en-IN",
+                            {
+                                minimumFractionDigits:
+                                    2,
+
+                                maximumFractionDigits:
+                                    2
+                            }
+                        )}
+
+                    </div>
+
+
+                    <div
+                        class="
+                            product-stock
+                            ${
+                                outOfStock
+                                    ? "out-of-stock"
+                                    : ""
+                            }
+                        "
+                    >
+
+                        ${
+                            outOfStock
+                                ? "Out of stock"
+                                : `Stock: ${stock}`
+                        }
+
+                    </div>
+
+
+                    ${
+                        outOfStock
+
+                            ? `
+
+                                <button
+                                    class="btn-buy"
+                                    disabled
+                                >
+                                    Out of Stock
+                                </button>
+
+                              `
+
+                            : `
+
+                                <div
+                                    class="quantity-section"
+                                >
+
+                                    <label>
+                                        Quantity
+                                    </label>
+
+
+                                    <div
+                                        class="quantity-control"
+                                    >
+
+                                        <button
+                                            type="button"
+                                            class="quantity-btn decrease"
+                                        >
+                                            −
+                                        </button>
+
+
+                                        <input
+                                            type="number"
+                                            class="quantity-input"
+                                            value="1"
+                                            min="1"
+                                            max="${stock}"
+                                        >
+
+
+                                        <button
+                                            type="button"
+                                            class="quantity-btn increase"
+                                        >
+                                            +
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div
+                                    class="order-total"
+                                >
+
+                                    <span>
+                                        Total
+                                    </span>
+
+
+                                    <strong
+                                        class="card-total"
+                                    >
+
+                                        ₹${price.toLocaleString(
+                                            "en-IN",
+                                            {
+                                                minimumFractionDigits:
+                                                    2,
+
+                                                maximumFractionDigits:
+                                                    2
+                                            }
+                                        )}
+
+                                    </strong>
+
+                                </div>
+
+
+                                <button
+                                    type="button"
+                                    class="btn-buy"
+                                >
+                                    Buy Now
+                                </button>
+
+                              `
+                    }
+
+                </div>
+            `;
+
+
+            productContainer.appendChild(
+                card
+            );
+
+
+            if (
+                !outOfStock
+            ) {
+
+                setupProductCard(
+                    card,
+                    product,
+                    price,
+                    stock
+                );
+            }
+        }
+    );
 }
+
 
 // ==========================================
 // PRODUCT CARD
 // ==========================================
 
 function setupProductCard(
-card,
-product,
-price,
-stock
+    card,
+    product,
+    price,
+    stock
 ) {
 
-
-const quantityInput =
-    card.querySelector(
-        ".quantity-input"
-    );
-
-
-const decreaseBtn =
-    card.querySelector(
-        ".decrease"
-    );
-
-
-const increaseBtn =
-    card.querySelector(
-        ".increase"
-    );
-
-
-const buyBtn =
-    card.querySelector(
-        ".btn-buy"
-    );
-
-
-const totalElement =
-    card.querySelector(
-        ".card-total"
-    );
-
-
-function updateTotal() {
-
-    let quantity =
-        Number(quantityInput.value);
-
-
-    if (
-        !Number.isInteger(quantity) ||
-        quantity < 1
-    ) {
-
-        quantity = 1;
-
-    }
-
-
-    if (quantity > stock) {
-
-        quantity = stock;
-
-    }
-
-
-    quantityInput.value =
-        quantity;
-
-
-    const total =
-        price * quantity;
-
-
-    totalElement.textContent =
-        `₹${total.toLocaleString(
-            "en-IN",
-            {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }
-        )}`;
-
-}
-
-
-decreaseBtn.addEventListener(
-    "click",
-    () => {
-
-        let quantity =
-            Number(quantityInput.value);
-
-        quantity--;
-
-        if (quantity < 1) {
-
-            quantity = 1;
-
-        }
-
-        quantityInput.value =
-            quantity;
-
-        updateTotal();
-
-    }
-);
-
-
-increaseBtn.addEventListener(
-    "click",
-    () => {
-
-        let quantity =
-            Number(quantityInput.value);
-
-        quantity++;
-
-
-        if (quantity > stock) {
-
-            quantity = stock;
-
-        }
-
-
-        quantityInput.value =
-            quantity;
-
-        updateTotal();
-
-    }
-);
-
-
-quantityInput.addEventListener(
-    "input",
-    updateTotal
-);
-
-
-buyBtn.addEventListener(
-    "click",
-    () => {
-
-        createOrder(
-            product,
-            quantityInput,
-            buyBtn
+    const quantityInput =
+        card.querySelector(
+            ".quantity-input"
         );
 
+
+    const decreaseBtn =
+        card.querySelector(
+            ".decrease"
+        );
+
+
+    const increaseBtn =
+        card.querySelector(
+            ".increase"
+        );
+
+
+    const buyBtn =
+        card.querySelector(
+            ".btn-buy"
+        );
+
+
+    const totalElement =
+        card.querySelector(
+            ".card-total"
+        );
+
+
+    function updateTotal() {
+
+        let quantity =
+            Number(
+                quantityInput.value
+            );
+
+
+        if (
+            !Number.isInteger(
+                quantity
+            ) ||
+            quantity < 1
+        ) {
+
+            quantity = 1;
+        }
+
+
+        if (
+            quantity > stock
+        ) {
+
+            quantity = stock;
+        }
+
+
+        quantityInput.value =
+            quantity;
+
+
+        const total =
+            price * quantity;
+
+
+        totalElement.textContent =
+            `₹${total.toLocaleString(
+                "en-IN",
+                {
+                    minimumFractionDigits:
+                        2,
+
+                    maximumFractionDigits:
+                        2
+                }
+            )}`;
     }
-);
 
 
+    // ======================================
+    // DECREASE
+    // ======================================
+
+    decreaseBtn.addEventListener(
+        "click",
+        () => {
+
+            let quantity =
+                Number(
+                    quantityInput.value
+                );
+
+
+            quantity--;
+
+
+            if (
+                quantity < 1
+            ) {
+
+                quantity = 1;
+            }
+
+
+            quantityInput.value =
+                quantity;
+
+
+            updateTotal();
+        }
+    );
+
+
+    // ======================================
+    // INCREASE
+    // ======================================
+
+    increaseBtn.addEventListener(
+        "click",
+        () => {
+
+            let quantity =
+                Number(
+                    quantityInput.value
+                );
+
+
+            quantity++;
+
+
+            if (
+                quantity > stock
+            ) {
+
+                quantity = stock;
+            }
+
+
+            quantityInput.value =
+                quantity;
+
+
+            updateTotal();
+        }
+    );
+
+
+    // ======================================
+    // MANUAL QUANTITY
+    // ======================================
+
+    quantityInput.addEventListener(
+        "input",
+        updateTotal
+    );
+
+
+    // ======================================
+    // BUY
+    // ======================================
+
+    buyBtn.addEventListener(
+        "click",
+        () => {
+
+            createOrder(
+                product,
+                quantityInput,
+                buyBtn
+            );
+        }
+    );
 }
+
 
 // ==========================================
 // CREATE ORDER
 // ==========================================
 
 async function createOrder(
-product,
-quantityInput,
-buyBtn
+    product,
+    quantityInput,
+    buyBtn
 ) {
 
-
-const quantity =
-    Number(quantityInput.value);
-
-
-if (
-    !Number.isInteger(quantity) ||
-    quantity <= 0
-) {
-
-    alert(
-        "Please enter a valid quantity."
-    );
-
-    return;
-
-}
-
-
-if (
-    quantity > Number(product.stock)
-) {
-
-    alert(
-        `Only ${product.stock} item(s) are available.`
-    );
-
-    return;
-
-}
-
-
-const confirmed =
-    confirm(
-        `Place order for ${quantity} × ${product.name}?`
-    );
-
-
-if (!confirmed) {
-
-    return;
-
-}
-
-
-try {
-
-    buyBtn.disabled = true;
-
-    buyBtn.textContent =
-        "Placing Order...";
-
-
-    const response =
-        await fetch(
-            ORDER_API,
-            {
-
-                method: "POST",
-
-                headers: {
-
-                    "Content-Type":
-                        "application/json",
-
-                    "Authorization":
-                        "Bearer " + token
-
-                },
-
-                body: JSON.stringify({
-
-                    product_id:
-                        product.id,
-
-                    quantity:
-                        quantity
-
-                })
-
-            }
+    const quantity =
+        Number(
+            quantityInput.value
         );
 
 
-    const data =
-        await response.json();
-
-
-    console.log(
-        "Create order response:",
-        data
-    );
-
-
     if (
-        response.status === 401 ||
-        response.status === 403
+        !Number.isInteger(
+            quantity
+        ) ||
+        quantity <= 0
     ) {
-
-        localStorage.removeItem("token");
 
         alert(
-            "Your session has expired. Please login again."
+            "Please enter a valid quantity."
         );
 
-        window.location.href = "/";
-
         return;
-
     }
 
 
     if (
-        !response.ok ||
-        !data.success
+        quantity >
+        Number(product.stock)
     ) {
 
-        throw new Error(
-            data.message ||
-            "Failed to create order."
+        alert(
+            `Only ${product.stock} item(s) are available.`
         );
 
+        return;
     }
 
 
-    alert(
-        "Order created successfully!"
-    );
+    const confirmed =
+        confirm(
+            `Place order for ${quantity} × ${product.name}?`
+        );
 
 
-    window.location.href =
-        "/pages/orders.html";
+    if (!confirmed) {
+
+        return;
+    }
 
 
-} catch (error) {
+    try {
 
-    console.error(
-        "Create order error:",
-        error
-    );
+        buyBtn.disabled =
+            true;
 
 
-    alert(
-        error.message ||
-        "Unable to create order."
-    );
+        buyBtn.textContent =
+            "Placing Order...";
 
 
-    buyBtn.disabled = false;
+        const response =
+            await fetch(
+                ORDER_API,
+                {
+                    method: "POST",
 
-    buyBtn.textContent =
-        "Buy Now";
+                    headers: {
 
+                        "Content-Type":
+                            "application/json",
+
+                        "Authorization":
+                            "Bearer " + token
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            product_id:
+                                product.id,
+
+                            quantity:
+                                quantity
+                        })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Create order response:",
+            data
+        );
+
+
+        // ==================================
+        // 401 = SESSION EXPIRED
+        // ==================================
+
+        if (
+            response.status === 401
+        ) {
+
+            handleSessionExpired();
+
+            return;
+        }
+
+
+        // ==================================
+        // 403 = FORBIDDEN
+        // DO NOT LOGOUT
+        // ==================================
+
+        if (
+            response.status === 403
+        ) {
+
+            alert(
+                data.message ||
+                "You do not have permission to place this order."
+            );
+
+
+            buyBtn.disabled =
+                false;
+
+
+            buyBtn.textContent =
+                "Buy Now";
+
+
+            return;
+        }
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.message ||
+                "Failed to create order."
+            );
+        }
+
+
+        alert(
+            "Order created successfully!"
+        );
+
+
+        window.location.href =
+            "/pages/orders.html";
+
+
+    } catch (error) {
+
+        console.error(
+            "Create order error:",
+            error
+        );
+
+
+        alert(
+            error.message ||
+            "Unable to create order."
+        );
+
+
+        buyBtn.disabled =
+            false;
+
+
+        buyBtn.textContent =
+            "Buy Now";
+    }
 }
 
-
-}
 
 // ==========================================
 // HTML ESCAPING
 // ==========================================
 
-function escapeHtml(value) {
+function escapeHtml(
+    value
+) {
+
+    const div =
+        document.createElement(
+            "div"
+        );
 
 
-const div =
-    document.createElement("div");
-
-div.textContent =
-    value ?? "";
-
-return div.innerHTML;
+    div.textContent =
+        value ?? "";
 
 
+    return div.innerHTML;
 }
+
 
 // ==========================================
 // START
