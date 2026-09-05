@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Test Docker Hub Credential') {
     steps {
         withCredentials([
             usernamePassword(
@@ -55,6 +55,10 @@ pipeline {
             )
         ]) {
             powershell '''
+                Write-Host "Username: $env:DOCKER_USERNAME"
+                Write-Host "Token received: $([bool]$env:DOCKER_PASSWORD)"
+                Write-Host "Token length: $($env:DOCKER_PASSWORD.Length)"
+
                 $env:DOCKER_PASSWORD | docker login --username $env:DOCKER_USERNAME --password-stdin
             '''
         }
