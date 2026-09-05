@@ -2,9 +2,8 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'us-east-1'
-        ECR_REGISTRY = '000000000000.dkr.ecr.us-east-1.localhost:5100'
         IMAGE_TAG = "build-${BUILD_NUMBER}"
+        DOCKERHUB_USERNAME = 'zaheerpasha786'
     }
 
     stages {
@@ -15,97 +14,73 @@ pipeline {
             }
         }
 
-        stage('Verify Docker & AWS') {
+        stage('Verify Docker') {
             steps {
                 bat 'docker --version'
                 bat 'docker ps'
-
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'floci-aws',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
-                    bat 'aws --version'
-                    bat 'aws --endpoint-url http://localhost:4566 --region %AWS_REGION% sts get-caller-identity'
-                }
             }
         }
 
         stage('Build Frontend') {
             steps {
-                bat 'docker build -t microservices-frontend:%IMAGE_TAG% ./frontend'
+                bat 'docker build -t %DOCKERHUB_USERNAME%/microservices-frontend:%IMAGE_TAG% ./frontend'
             }
         }
 
         stage('Build User Service') {
             steps {
-                bat 'docker build -t microservices-user:%IMAGE_TAG% ./user-service'
+                bat 'docker build -t %DOCKERHUB_USERNAME%/microservices-user:%IMAGE_TAG% ./user-service'
             }
         }
 
         stage('Build Product Service') {
             steps {
-                bat 'docker build -t microservices-product:%IMAGE_TAG% ./product-service'
+                bat 'docker build -t %DOCKERHUB_USERNAME%/microservices-product:%IMAGE_TAG% ./product-service'
             }
         }
 
         stage('Build Order Service') {
             steps {
-                bat 'docker build -t microservices-order:%IMAGE_TAG% ./order-service'
+                bat 'docker build -t %DOCKERHUB_USERNAME%/microservices-order:%IMAGE_TAG% ./order-service'
             }
         }
 
-        stage('Login to Floci ECR') {
+        stage('Login to Docker Hub') {
             steps {
                 withCredentials([
                     usernamePassword(
-                        credentialsId: 'floci-aws',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
                     )
                 ]) {
                     bat '''
-                        aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr get-login-password | docker login --username AWS --password-stdin %ECR_REGISTRY%
+                        echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
                     '''
                 }
             }
         }
 
-        stage('Push Images to Floci ECR') {
+        stage('Push Images to Docker Hub') {
             steps {
-                bat 'docker tag microservices-frontend:%IMAGE_TAG% %ECR_REGISTRY%/microservices-frontend:%IMAGE_TAG%'
-                bat 'docker tag microservices-user:%IMAGE_TAG% %ECR_REGISTRY%/microservices-user:%IMAGE_TAG%'
-                bat 'docker tag microservices-product:%IMAGE_TAG% %ECR_REGISTRY%/microservices-product:%IMAGE_TAG%'
-                bat 'docker tag microservices-order:%IMAGE_TAG% %ECR_REGISTRY%/microservices-order:%IMAGE_TAG%'
-
-                bat 'docker push %ECR_REGISTRY%/microservices-frontend:%IMAGE_TAG%'
-                bat 'docker push %ECR_REGISTRY%/microservices-user:%IMAGE_TAG%'
-                bat 'docker push %ECR_REGISTRY%/microservices-product:%IMAGE_TAG%'
-                bat 'docker push %ECR_REGISTRY%/microservices-order:%IMAGE_TAG%'
+                bat 'docker push %DOCKERHUB_USERNAME%/microservices-frontend:%IMAGE_TAG%'
+                bat 'docker push %DOCKERHUB_USERNAME%/microservices-user:%IMAGE_TAG%'
+                bat 'docker push %DOCKERHUB_USERNAME%/microservices-product:%IMAGE_TAG%'
+                bat 'docker push %DOCKERHUB_USERNAME%/microservices-order:%IMAGE_TAG%'
             }
         }
 
         stage('Deploy') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'floci-aws',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
-                    bat '''
-                        echo Deploying version %IMAGE_TAG%
+                bat '''
+                    echo Deploying version %IMAGE_TAG%
 
-                        aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr get-login-password | docker login --username AWS --password-stdin %ECR_REGISTRY%
+                    set IMAGE_TAG=%IMAGE_TAG%
 
-                        docker compose -f deploy\\docker-compose.prod.yml pull
+                    docker compose -f deploy\\docker-compose.prod.yml pull
 
-                        docker compose -f deploy\\docker-compose.prod.yml up -d --remove-orphans
-                    '''
-                }
+                    docker compose -f deploy\\docker-compose.prod.yml up -d --remove-orphans
+                '''
             }
         }
 
