@@ -54,10 +54,17 @@ pipeline {
                 passwordVariable: 'DOCKER_PASSWORD'
             )
         ]) {
-            bat '''
-                echo Username=%DOCKER_USERNAME%
-                docker logout
-                docker login --username "%DOCKER_USERNAME%" --password-stdin < "%WORKSPACE%\\docker-password.txt"
+            powershell '''
+                Write-Host "Username: $env:DOCKER_USERNAME"
+                Write-Host "Token length: $($env:DOCKER_PASSWORD.Length)"
+
+                $result = Invoke-WebRequest `
+                    -Uri "https://registry-1.docker.io/v2/" `
+                    -Method Get `
+                    -UseBasicParsing `
+                    -ErrorAction SilentlyContinue
+
+                Write-Host "Docker Hub reachable"
             '''
         }
     }
