@@ -104,5 +104,28 @@ pipeline {
         }
     }
 }
+stage('Health Check') {
+    steps {
+        bat '''
+            echo Checking Frontend...
+            curl.exe -f http://localhost:8090
+
+            echo Checking User Service...
+            curl.exe -f http://localhost:5001
+
+            echo Checking Product Service...
+            curl.exe -f http://localhost:5002/health
+
+            echo Checking Order Service...
+            curl.exe -f http://localhost:5003/health
+
+            echo Checking Order Database...
+            curl.exe -f http://localhost:5003/health/db
+
+            echo Checking Docker containers...
+            docker compose -f deploy\\docker-compose.prod.yml ps
+        '''
+    }
+}
     }
 }
