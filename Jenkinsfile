@@ -44,10 +44,10 @@ pipeline {
                 bat 'docker build -t %DOCKERHUB_USERNAME%/microservices-order:%IMAGE_TAG% ./order-service'
             }
         }
-        stage('Test Docker Linux Context') {
+        stage('Test Docker Desktop Engine') {
     steps {
         bat '''
-            docker --context desktop-linux info
+            docker -H npipe:////./pipe/dockerDesktopLinuxEngine info
         '''
     }
 }
