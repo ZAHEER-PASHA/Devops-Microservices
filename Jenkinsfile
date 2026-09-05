@@ -15,13 +15,22 @@ pipeline {
         }
 
         stage('Verify Docker & AWS') {
-            steps {
-                bat 'docker --version'
-                bat 'docker ps'
-                bat 'aws --version'
-                bat 'aws --endpoint-url http://localhost:4566 --region %AWS_REGION% sts get-caller-identity'
-            }
+    steps {
+        bat 'docker --version'
+        bat 'docker ps'
+
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'floci-aws',
+                usernameVariable: 'AWS_ACCESS_KEY_ID',
+                passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+            )
+        ]) {
+            bat 'aws --version'
+            bat 'aws --endpoint-url http://localhost:4566 --region %AWS_REGION% sts get-caller-identity'
         }
+    }
+}
 
         stage('Build Frontend') {
             steps {
