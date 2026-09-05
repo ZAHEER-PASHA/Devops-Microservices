@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Docker Hub Credential Test') {
+        stage('Login to Docker Hub') {
     steps {
         withCredentials([
             usernamePassword(
@@ -55,16 +55,9 @@ pipeline {
             )
         ]) {
             powershell '''
-                Write-Host "Username: $env:DOCKER_USERNAME"
-                Write-Host "Token length: $($env:DOCKER_PASSWORD.Length)"
-
-                $result = Invoke-WebRequest `
-                    -Uri "https://registry-1.docker.io/v2/" `
-                    -Method Get `
-                    -UseBasicParsing `
-                    -ErrorAction SilentlyContinue
-
-                Write-Host "Docker Hub reachable"
+                $env:DOCKER_PASSWORD | docker login `
+                    --username $env:DOCKER_USERNAME `
+                    --password-stdin
             '''
         }
     }
