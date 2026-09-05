@@ -44,6 +44,23 @@ pipeline {
                 bat 'docker build -t %DOCKERHUB_USERNAME%/microservices-order:%IMAGE_TAG% ./order-service'
             }
         }
+        stage('Compare Docker CLI') {
+    steps {
+        bat '''
+            echo === JENKINS USER ===
+            whoami
+
+            echo === DOCKER VERSION ===
+            docker --version
+
+            echo === DOCKER PATH ===
+            where docker
+
+            echo === DOCKER CONTEXT ===
+            docker context show
+        '''
+    }
+}
         stage('Test Docker Hub with Clean Config') {
     steps {
         withCredentials([
