@@ -51,6 +51,36 @@ pipeline {
         '''
     }
 }
+stage('Test Docker Hub Login') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-credentials',
+                usernameVariable: 'DOCKER_USERNAME',
+                passwordVariable: 'DOCKER_PASSWORD'
+            )
+        ]) {
+            powershell '''
+                $config = "$env:WORKSPACE\\docker-auth-test"
+                
+                if (Test-Path $config) {
+                    Remove-Item -Recurse -Force $config
+                }
+
+                New-Item -ItemType Directory -Force -Path $config | Out-Null
+
+                $env:DOCKER_CONFIG = $config
+
+                Write-Host "Docker user: $env:DOCKER_USERNAME"
+                Write-Host "Docker config: $env:DOCKER_CONFIG"
+
+                $env:DOCKER_PASSWORD | docker login docker.io `
+                    --username $env:DOCKER_USERNAME `
+                    --password-stdin
+            '''
+        }
+    }
+}
 stage('Test Docker Hub API Authentication') {
     steps {
         withCredentials([
