@@ -44,6 +44,36 @@ pipeline {
                 bat 'docker build -t %DOCKERHUB_USERNAME%/microservices-order:%IMAGE_TAG% ./order-service'
             }
         }
+        stage('Test Docker Hub with Clean Config') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-credentials',
+                usernameVariable: 'DOCKER_USERNAME',
+                passwordVariable: 'DOCKER_PASSWORD'
+            )
+        ]) {
+            powershell '''
+                $configDir = "$env:WORKSPACE\\docker-config-test"
+
+                if (Test-Path $configDir) {
+                    Remove-Item $configDir -Recurse -Force
+                }
+
+                New-Item -ItemType Directory -Path $configDir | Out-Null
+
+                $env:DOCKER_CONFIG = $configDir
+
+                Write-Host "Docker config: $env:DOCKER_CONFIG"
+                Write-Host "Docker user: $env:DOCKER_USERNAME"
+
+                $env:DOCKER_PASSWORD | docker login `
+                    --username $env:DOCKER_USERNAME `
+                    --password-stdin
+            '''
+        }
+    }
+}
         stage('Check Docker Environment') {
     steps {
         bat '''
