@@ -51,6 +51,40 @@ pipeline {
         '''
     }
 }
+stage('Test Docker Hub API Authentication') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-credentials',
+                usernameVariable: 'DOCKER_USERNAME',
+                passwordVariable: 'DOCKER_PASSWORD'
+            )
+        ]) {
+            powershell '''
+                $pair = "$env:DOCKER_USERNAME`:$env:DOCKER_PASSWORD"
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($pair)
+                $base64 = [Convert]::ToBase64String($bytes)
+
+                $headers = @{
+                    Authorization = "Basic $base64"
+                }
+
+                try {
+                    $response = Invoke-RestMethod `
+                        -Uri "https://hub.docker.com/v2/users/login/" `
+                        -Method Post `
+                        -Headers $headers
+
+                    Write-Host "Docker Hub API authentication succeeded"
+                }
+                catch {
+                    Write-Host "Docker Hub API authentication failed"
+                    Write-Host $_.Exception.Message
+                }
+            '''
+        }
+    }
+}
         stage('Compare Docker CLI') {
     steps {
         bat '''
