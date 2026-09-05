@@ -54,16 +54,8 @@ pipeline {
                 passwordVariable: 'DOCKER_PASSWORD'
             )
         ]) {
-            bat '''
-                echo Docker username: %DOCKER_USERNAME%
-                if defined DOCKER_PASSWORD (
-                    echo Docker password/token is available
-                ) else (
-                    echo Docker password/token is NOT available
-                )
-
-                docker logout
-                echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
+            powershell '''
+                $env:DOCKER_PASSWORD | docker login --username $env:DOCKER_USERNAME --password-stdin
             '''
         }
     }
