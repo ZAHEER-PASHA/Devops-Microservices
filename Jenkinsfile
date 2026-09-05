@@ -85,5 +85,24 @@ pipeline {
                 bat 'docker push %ECR_REGISTRY%/microservices-order:latest'
             }
         }
+        stage('Deploy') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'floci-aws',
+                usernameVariable: 'AWS_ACCESS_KEY_ID',
+                passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+            )
+        ]) {
+            bat '''
+                aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr get-login-password | docker login --username AWS --password-stdin %ECR_REGISTRY%
+
+                docker compose -f deploy\\docker-compose.prod.yml pull
+
+                docker compose -f deploy\\docker-compose.prod.yml up -d --remove-orphans
+            '''
+        }
+    }
+}
     }
 }
