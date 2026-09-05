@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Test Docker Hub Credential') {
+        stage('Docker Hub Credential Test') {
     steps {
         withCredentials([
             usernamePassword(
@@ -54,25 +54,30 @@ pipeline {
                 passwordVariable: 'DOCKER_PASSWORD'
             )
         ]) {
-            powershell '''
-                Write-Host "Username: $env:DOCKER_USERNAME"
-                Write-Host "Token received: $([bool]$env:DOCKER_PASSWORD)"
-                Write-Host "Token length: $($env:DOCKER_PASSWORD.Length)"
-
-                $env:DOCKER_PASSWORD | docker login --username $env:DOCKER_USERNAME --password-stdin
+            bat '''
+                echo Username=%DOCKER_USERNAME%
+                docker logout
+                docker login --username "%DOCKER_USERNAME%" --password-stdin < "%WORKSPACE%\\docker-password.txt"
             '''
         }
     }
 }
 
         stage('Push Images to Docker Hub') {
-            steps {
+    steps {
+        script {
+            docker.withRegistry(
+                'https://index.docker.io/v1/',
+                'dockerhub-credentials'
+            ) {
                 bat 'docker push %DOCKERHUB_USERNAME%/microservices-frontend:%IMAGE_TAG%'
                 bat 'docker push %DOCKERHUB_USERNAME%/microservices-user:%IMAGE_TAG%'
                 bat 'docker push %DOCKERHUB_USERNAME%/microservices-product:%IMAGE_TAG%'
                 bat 'docker push %DOCKERHUB_USERNAME%/microservices-order:%IMAGE_TAG%'
             }
         }
+    }
+}
 
         stage('Deploy') {
             steps {
