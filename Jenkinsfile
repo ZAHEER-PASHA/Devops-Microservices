@@ -44,6 +44,27 @@ pipeline {
                 bat 'docker build -t %DOCKERHUB_USERNAME%/microservices-order:%IMAGE_TAG% ./order-service'
             }
         }
+        stage('Check Docker Environment') {
+    steps {
+        bat '''
+            echo === USER ===
+            whoami
+
+            echo === DOCKER CONTEXT ===
+            docker context show
+
+            echo === DOCKER INFO ===
+            docker info --format "{{.Name}}"
+
+            echo === DOCKER CONFIG ===
+            if defined DOCKER_CONFIG (
+                echo DOCKER_CONFIG=%DOCKER_CONFIG%
+            ) else (
+                echo DOCKER_CONFIG is not set
+            )
+        '''
+    }
+}
 
         stage('Compare Docker Hub Credential') {
     steps {
