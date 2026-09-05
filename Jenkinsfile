@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Compare Docker Hub Credential') {
     steps {
         withCredentials([
             usernamePassword(
@@ -55,9 +55,14 @@ pipeline {
             )
         ]) {
             powershell '''
-                $env:DOCKER_PASSWORD | docker login `
-                    --username $env:DOCKER_USERNAME `
-                    --password-stdin
+                Write-Host "Jenkins username: $env:DOCKER_USERNAME"
+                Write-Host "Jenkins token length: $($env:DOCKER_PASSWORD.Length)"
+
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($env:DOCKER_PASSWORD)
+                $hash = [System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
+                $hashString = [BitConverter]::ToString($hash).Replace("-", "").ToLower()
+
+                Write-Host "Jenkins token SHA256: $hashString"
             '''
         }
     }
