@@ -106,9 +106,9 @@ pipeline {
 
                 aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr get-login-password | docker login --username AWS --password-stdin %ECR_REGISTRY%
 
-                docker compose -f deploy\\docker-compose.floci.yml pull
+                docker compose -f deploy\\docker-compose.prod.yml pull
 
-                docker compose -f deploy\\docker-compose.floci.yml up -d --remove-orphans
+                docker compose -f deploy\\docker-compose.prod.yml up -d --remove-orphans
             '''
         }
     }
