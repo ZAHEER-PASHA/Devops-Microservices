@@ -51,21 +51,32 @@ pipeline {
         '''
     }
 }
-stage('Test Docker Hub Login') {
+stage('Check Jenkins Docker Environment') {
     steps {
-        withCredentials([
-            usernamePassword(
-                credentialsId: 'dockerhub-credentials',
-                usernameVariable: 'DOCKER_USERNAME',
-                passwordVariable: 'DOCKER_PASSWORD'
-            )
-        ]) {
-            powershell '''
-                $env:DOCKER_PASSWORD | docker -H npipe:////./pipe/dockerDesktopLinuxEngine login docker.io `
-                    --username $env:DOCKER_USERNAME `
-                    --password-stdin
-            '''
-        }
+        powershell '''
+            Write-Host "=== Jenkins identity ==="
+            whoami
+
+            Write-Host ""
+            Write-Host "=== Docker environment variables ==="
+
+            Get-ChildItem Env: |
+                Where-Object {
+                    $_.Name -match '^(DOCKER|HTTP_PROXY|HTTPS_PROXY|NO_PROXY)'
+                } |
+                Sort-Object Name |
+                ForEach-Object {
+                    Write-Host "$($_.Name) = $($_.Value)"
+                }
+
+            Write-Host ""
+            Write-Host "=== Docker context ==="
+            docker context show
+
+            Write-Host ""
+            Write-Host "=== Docker client/server ==="
+            docker version --format "Client={{.Client.Version}} Server={{.Server.Version}}"
+        '''
     }
 }
 stage('Test Docker Hub API Authentication') {
