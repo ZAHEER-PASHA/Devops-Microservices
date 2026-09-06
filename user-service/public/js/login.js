@@ -102,12 +102,12 @@ form.addEventListener(
     if (data.user.role === "admin") {
 
         window.location.href =
-            "http://localhost:8090/admin/admin.html";
+            "/admin/admin.html";
 
     } else {
 
         window.location.href =
-            "http://localhost:8090/pages/products.html";
+            "/pages/products.html";
 
     }
 
