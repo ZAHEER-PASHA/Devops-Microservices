@@ -56,6 +56,22 @@ pipeline {
                 bat 'docker build -t microservices-order:%IMAGE_TAG% ./order-service'
             }
         }
+        stage('Test Floci Registry') {
+    steps {
+        bat '''
+            echo Testing Floci API...
+            curl.exe -f http://localhost:4566/
+
+            echo.
+            echo Testing ECR Registry...
+            curl.exe -f http://localhost:5100/v2/
+
+            echo.
+            echo Testing ECR hostname...
+            nslookup 000000000000.dkr.ecr.us-east-1.localhost
+        '''
+    }
+}
 
         stage('Login to Floci ECR') {
             steps {
