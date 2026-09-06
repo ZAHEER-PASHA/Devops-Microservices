@@ -56,22 +56,6 @@ pipeline {
                 bat 'docker build -t microservices-order:%IMAGE_TAG% ./order-service'
             }
         }
-        stage('Test Floci Registry') {
-    steps {
-        bat '''
-            echo Testing Floci API...
-            curl.exe -f http://localhost:4566/
-
-            echo.
-            echo Testing ECR Registry...
-            curl.exe -f http://localhost:5100/v2/
-
-            echo.
-            echo Testing ECR hostname...
-            nslookup 000000000000.dkr.ecr.us-east-1.localhost
-        '''
-    }
-}
 
         stage('Login to Floci ECR') {
             steps {
@@ -125,26 +109,26 @@ pipeline {
         }
 
         stage('Deploy') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'floci-aws',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
-                    bat '''
-                        echo Deploying version %IMAGE_TAG%
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'floci-aws',
+                usernameVariable: 'AWS_ACCESS_KEY_ID',
+                passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+            )
+        ]) {
+            bat '''
+                echo Deploying version %IMAGE_TAG%
 
-                        aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr get-login-password | docker login --username AWS --password-stdin %ECR_REGISTRY%
+                aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr get-login-password | docker login --username AWS --password-stdin %ECR_REGISTRY%
 
-                        docker compose -f deploy\\docker-compose.prod.yml pull
+                docker compose -f deploy\\docker-compose.floci.yml pull
 
-                        docker compose -f deploy\\docker-compose.prod.yml up -d --remove-orphans
-                    '''
-                }
-            }
+                docker compose -f deploy\\docker-compose.floci.yml up -d --remove-orphans
+            '''
         }
+    }
+}
 
         stage('Health Check') {
             steps {
