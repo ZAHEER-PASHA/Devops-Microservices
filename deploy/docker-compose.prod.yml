@@ -4,7 +4,7 @@ services:
   # FRONTEND
   # =========================
   frontend:
-    image: localhost:5100/microservices-order:${IMAGE_TAG}
+    image: localhost:5100/microservices-frontend:${IMAGE_TAG}
     container_name: ecommerce-frontend
     ports:
       - "8090:80"
@@ -21,7 +21,7 @@ services:
   # USER SERVICE
   # =========================
   user-service:
-    image: localhost:5100/microservices-order:${IMAGE_TAG}
+    image: localhost:5100/microservices-user:${IMAGE_TAG}
     container_name: ecommerce-user-service
     ports:
       - "5001:5001"
@@ -90,7 +90,7 @@ services:
   # PRODUCT SERVICE
   # =========================
   product-service:
-    image: localhost:5100/microservices-order:${IMAGE_TAG}
+    image: localhost:5100/microservices-product:${IMAGE_TAG}
     container_name: ecommerce-product-service
 
     ports:
