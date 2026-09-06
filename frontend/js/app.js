@@ -313,7 +313,7 @@ function displayProducts(products) {
 
         const image =
             product.image_url ||
-            "https://via.placeholder.com/400x200?text=No+Image";
+            "/images/no-image.png";
 
 
         // ==========================================
@@ -349,7 +349,7 @@ function displayProducts(products) {
                 )}"
                 class="product-image"
                 onerror="
-                    this.src='https://via.placeholder.com/400x200?text=No+Image'
+                    this.src='/images/no-image.png'
                 "
             >
 
