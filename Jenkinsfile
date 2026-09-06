@@ -74,7 +74,27 @@ pipeline {
         }
         stage('Create ECR Repositories') {
     steps {
-        echo 'Floci ECR repositories already exist - skipping creation'
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'floci-aws',
+                usernameVariable: 'AWS_ACCESS_KEY_ID',
+                passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+            )
+        ]) {
+            bat '''
+                echo Creating Floci ECR repositories if they do not exist...
+
+                aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr describe-repositories --repository-names microservices-frontend >nul 2>&1 || aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr create-repository --repository-name microservices-frontend
+
+                aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr describe-repositories --repository-names microservices-user >nul 2>&1 || aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr create-repository --repository-name microservices-user
+
+                aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr describe-repositories --repository-names microservices-product >nul 2>&1 || aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr create-repository --repository-name microservices-product
+
+                aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr describe-repositories --repository-names microservices-order >nul 2>&1 || aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr create-repository --repository-name microservices-order
+
+                echo ECR repository check completed.
+            '''
+        }
     }
 }
 
