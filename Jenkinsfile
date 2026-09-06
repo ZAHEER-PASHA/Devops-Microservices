@@ -61,20 +61,7 @@ stage('Test Docker Hub Login') {
             )
         ]) {
             powershell '''
-                $config = "$env:WORKSPACE\\docker-auth-test"
-                
-                if (Test-Path $config) {
-                    Remove-Item -Recurse -Force $config
-                }
-
-                New-Item -ItemType Directory -Force -Path $config | Out-Null
-
-                $env:DOCKER_CONFIG = $config
-
-                Write-Host "Docker user: $env:DOCKER_USERNAME"
-                Write-Host "Docker config: $env:DOCKER_CONFIG"
-
-                $env:DOCKER_PASSWORD | docker login docker.io `
+                $env:DOCKER_PASSWORD | docker -H npipe:////./pipe/dockerDesktopLinuxEngine login docker.io `
                     --username $env:DOCKER_USERNAME `
                     --password-stdin
             '''
