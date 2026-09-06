@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         AWS_REGION = 'us-east-1'
-        ECR_REGISTRY = '000000000000.dkr.ecr.us-east-1.localhost:5100'
+        ECR_REGISTRY = 'localhost:5100'
         IMAGE_TAG = "build-${BUILD_NUMBER}"
     }
 
