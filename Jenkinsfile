@@ -72,6 +72,27 @@ pipeline {
                 }
             }
         }
+        stage('Create ECR Repositories') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'floci-aws',
+                usernameVariable: 'AWS_ACCESS_KEY_ID',
+                passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+            )
+        ]) {
+            bat '''
+                aws --endpoint-url http://localhost:4566 ecr create-repository --repository-name microservices-frontend --region %AWS_REGION% || echo Frontend repository already exists
+
+                aws --endpoint-url http://localhost:4566 ecr create-repository --repository-name microservices-user --region %AWS_REGION% || echo User repository already exists
+
+                aws --endpoint-url http://localhost:4566 ecr create-repository --repository-name microservices-product --region %AWS_REGION% || echo Product repository already exists
+
+                aws --endpoint-url http://localhost:4566 ecr create-repository --repository-name microservices-order --region %AWS_REGION% || echo Order repository already exists
+            '''
+        }
+    }
+}
 
         stage('Push Images to Floci ECR') {
             steps {
