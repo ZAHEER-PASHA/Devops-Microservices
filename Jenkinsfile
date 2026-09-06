@@ -114,48 +114,40 @@ pipeline {
 
         stage('Deploy') {
     steps {
-        withCredentials([
-            usernamePassword(
-                credentialsId: 'floci-aws',
-                usernameVariable: 'AWS_ACCESS_KEY_ID',
-                passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-            )
-        ]) {
-            bat '''
-                echo Deploying version %IMAGE_TAG%
+        bat '''
+            echo Deploying version %IMAGE_TAG% to Kubernetes...
 
-                aws --endpoint-url http://localhost:4566 --region %AWS_REGION% ecr get-login-password | docker login --username AWS --password-stdin %ECR_REGISTRY%
+            kubectl -n ecommerce set image deployment/frontend frontend=host.docker.internal:5100/microservices-frontend:%IMAGE_TAG%
+            kubectl -n ecommerce set image deployment/user-service user-service=host.docker.internal:5100/microservices-user:%IMAGE_TAG%
+            kubectl -n ecommerce set image deployment/product-service product-service=host.docker.internal:5100/microservices-product:%IMAGE_TAG%
+            kubectl -n ecommerce set image deployment/order-service order-service=host.docker.internal:5100/microservices-order:%IMAGE_TAG%
 
-                docker compose -f deploy\\docker-compose.prod.yml pull
-
-                docker compose -f deploy\\docker-compose.prod.yml up -d --remove-orphans
-            '''
-        }
+            kubectl -n ecommerce rollout status deployment/frontend --timeout=120s
+            kubectl -n ecommerce rollout status deployment/user-service --timeout=120s
+            kubectl -n ecommerce rollout status deployment/product-service --timeout=120s
+            kubectl -n ecommerce rollout status deployment/order-service --timeout=120s
+        '''
     }
 }
 
         stage('Health Check') {
-            steps {
-                bat '''
-                    echo Checking Frontend...
-                    curl.exe -f http://localhost:8090
+    steps {
+        bat '''
+            echo Checking Kubernetes deployments...
 
-                    echo Checking User Service...
-                    curl.exe -f http://localhost:5001
+            kubectl -n ecommerce rollout status deployment/frontend --timeout=120s
+            kubectl -n ecommerce rollout status deployment/user-service --timeout=120s
+            kubectl -n ecommerce rollout status deployment/product-service --timeout=120s
+            kubectl -n ecommerce rollout status deployment/order-service --timeout=120s
 
-                    echo Checking Product Service...
-                    curl.exe -f http://localhost:5002/health
+            echo.
+            echo Checking Kubernetes pods...
+            kubectl get pods -n ecommerce
 
-                    echo Checking Order Service...
-                    curl.exe -f http://localhost:5003/health
-
-                    echo Checking Order Database...
-                    curl.exe -f http://localhost:5003/health/db
-
-                    echo Checking Docker containers...
-                    docker compose -f deploy\\docker-compose.prod.yml ps
-                '''
-            }
-        }
+            echo.
+            echo Kubernetes Health Check completed successfully.
+        '''
+    }
+}
     }
 }
